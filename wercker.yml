@@ -8,3 +8,10 @@ dev:
   - internal/watch:
       code: npm test
       reload: true
+
+build:
+  steps:
+  - npm-install
+  - script:
+      code: npm run typings
+  - npm-test
