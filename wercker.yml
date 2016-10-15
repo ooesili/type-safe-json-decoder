@@ -3,7 +3,8 @@ box: node
 dev:
   steps:
   - npm-install
-  - script:
+  - script: &typings
+      name: typings install
       code: npm run typings
   - internal/watch:
       code: npm test
@@ -12,6 +13,5 @@ dev:
 build:
   steps:
   - npm-install
-  - script:
-      code: npm run typings
+  - script: *typings
   - npm-test
