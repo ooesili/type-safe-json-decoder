@@ -4,6 +4,7 @@
   "description": "Elm-inspired JSON decoder for typescript",
   "main": "index.ts",
   "scripts": {
+    "typings": "typings install",
     "test": "tsc && node util/test.js"
   },
   "repository": {

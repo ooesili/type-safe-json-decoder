@@ -3,6 +3,8 @@ box: node
 dev:
   steps:
   - npm-install
+  - script:
+      code: npm run typings
   - internal/watch:
       code: npm test
       reload: true
