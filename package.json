@@ -1,0 +1,31 @@
+{
+  "name": "type-safe-json-decoder",
+  "version": "0.0.0",
+  "description": "Elm-inspired JSON decoder for typescript",
+  "main": "index.ts",
+  "scripts": {
+    "test": "tsc && node util/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ooesili/type-safe-json-decoder.git"
+  },
+  "keywords": [
+    "elm",
+    "json",
+    "typescript",
+    "decode",
+    "validate"
+  ],
+  "author": "Wesley Merkel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ooesili/type-safe-json-decoder/issues"
+  },
+  "homepage": "https://github.com/ooesili/type-safe-json-decoder#readme",
+  "devDependencies": {
+    "jasmine": "^2.5.2",
+    "typescript": "^2.0.3",
+    "typings": "^1.4.0"
+  }
+}

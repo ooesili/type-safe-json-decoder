@@ -1,0 +1,8 @@
+box: node
+
+dev:
+  steps:
+  - npm-install
+  - internal/watch:
+      code: npm test
+      reload: true

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "outDir": "./dist/",
+    "target": "es5",
+    "strictNullChecks": true
+  },
+  "files": [
+    "./typings/index.d.ts",
+    "./src/index.ts",
+    "./spec/index-spec.ts"
+  ]
+}
