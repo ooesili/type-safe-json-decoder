@@ -4,19 +4,19 @@ describe('string', () => {
   const decoder = module.string()
 
   it('succeeds when given a string', () => {
-    expect(module.decode(decoder, '"hey"')).toBe('hey')
+    expect(decoder.decodeJSON('"hey"')).toBe('hey')
   })
 
   it('fails when given a number', () => {
-    expect(() => module.decode(decoder, '1')).toThrowError('expected string, got number')
+    expect(() => decoder.decodeJSON('1')).toThrowError('expected string, got number')
   })
 
   it('fails when given null', () => {
-    expect(() => module.decode(decoder, 'null')).toThrowError('expected string, got null')
+    expect(() => decoder.decodeJSON('null')).toThrowError('expected string, got null')
   })
 
   it('fails when given a boolean', () => {
-    expect(() => module.decode(decoder, 'true')).toThrowError('expected string, got boolean')
+    expect(() => decoder.decodeJSON('true')).toThrowError('expected string, got boolean')
   })
 })
 
@@ -24,15 +24,15 @@ describe('number', () => {
   const decoder = module.number()
 
   it('succeeds when given a number', () => {
-    expect(module.decode(decoder, '5')).toBe(5)
+    expect(decoder.decodeJSON('5')).toBe(5)
   })
 
   it('fails when given a string', () => {
-    expect(() => module.decode(decoder, '"hey"')).toThrowError('expected number, got string')
+    expect(() => decoder.decodeJSON('"hey"')).toThrowError('expected number, got string')
   })
 
   it('fails when given boolean', () => {
-    expect(() => module.decode(decoder, 'true')).toThrowError('expected number, got boolean')
+    expect(() => decoder.decodeJSON('true')).toThrowError('expected number, got boolean')
   })
 })
 
@@ -40,15 +40,15 @@ describe('boolean', () => {
   const decoder = module.boolean()
 
   it('succeeds when given a boolean', () => {
-    expect(module.decode(decoder, 'true')).toBe(true)
+    expect(decoder.decodeJSON('true')).toBe(true)
   })
 
   it('fails when given a string', () => {
-    expect(() => module.decode(decoder, '"hey"')).toThrowError('expected boolean, got string')
+    expect(() => decoder.decodeJSON('"hey"')).toThrowError('expected boolean, got string')
   })
 
   it('fails when given a number', () => {
-    expect(() => module.decode(decoder, '1')).toThrowError('expected boolean, got number')
+    expect(() => decoder.decodeJSON('1')).toThrowError('expected boolean, got number')
   })
 })
 
@@ -56,27 +56,27 @@ describe('list', () => {
   const decoder = module.list(module.number())
 
   it('works when given an array',() => {
-    expect(module.decode(decoder, '[1, 2, 3]')).toEqual([1, 2, 3])
+    expect(decoder.decodeJSON('[1, 2, 3]')).toEqual([1, 2, 3])
   })
 
   it('fails when given something else', () => {
-    expect(() => module.decode(decoder, '"oops"')).toThrow()
+    expect(() => decoder.decodeJSON('"oops"')).toThrow()
   })
 
   it('fails when the elements are of the wrong type', () => {
-    expect(() => module.decode(decoder, '["dang"]')).toThrow()
+    expect(() => decoder.decodeJSON('["dang"]')).toThrow()
   })
 })
 
 describe('equal', () => {
   it('works when given null', () => {
     const decoder = module.equal(null)
-    expect(module.decode(decoder, 'null')).toBe(null)
+    expect(decoder.decodeJSON('null')).toBe(null)
   })
 
   it('fails when given two different values', () => {
     const decoder = module.equal(42)
-    expect(() => module.decode(decoder, 'true')).toThrow()
+    expect(() => decoder.decodeJSON('true')).toThrow()
   })
 })
 
@@ -87,7 +87,7 @@ describe('object', () => {
         ['x', module.number()],
         (x) => ({x})
       )
-      expect(module.decode(decoder, '{"x": 5}')).toEqual({x: 5})
+      expect(decoder.decodeJSON('{"x": 5}')).toEqual({x: 5})
     })
 
     it('can decode a nested object', () => {
@@ -101,7 +101,7 @@ describe('object', () => {
         (payload, error) => ({payload, error})
       )
       const json = '{"payload": {"x": 5, "y": 2}, "error": false}'
-      expect(module.decode(decoder, json)).toEqual({
+      expect(decoder.decodeJSON(json)).toEqual({
         payload: {x: 5, y: 2},
         error: false
       })
@@ -114,7 +114,7 @@ describe('object', () => {
         ['x', module.number()],
         (x: number) => ({x})
       )
-      expect(() => module.decode(decoder, '{}')).toThrowError('missing keys: x')
+      expect(() => decoder.decodeJSON('{}')).toThrowError('missing keys: x')
     })
 
     it('reports multiple missing keys', () => {
@@ -124,7 +124,7 @@ describe('object', () => {
         ['y', module.number()],
         (name: string, x: number, y: number) => ({name, x, y})
       )
-      expect(() => module.decode(decoder, '{"x": 5}')).toThrowError(
+      expect(() => decoder.decodeJSON('{"x": 5}')).toThrowError(
         'missing keys: name, y'
       )
     })
@@ -134,7 +134,7 @@ describe('object', () => {
         ['name', module.string()],
         (name: string) => {name}
       )
-      expect(() => module.decode(decoder, '{"name": 5}')).toThrowError(
+      expect(() => decoder.decodeJSON('{"name": 5}')).toThrowError(
         `error decoding key "name": expected string, got number`
       )
     })
@@ -144,17 +144,17 @@ describe('object', () => {
 describe('map', () => {
   it('can apply the identity function to the decoder', () => {
     const decoder = module.map((x) => x, module.string())
-    expect(module.decode(decoder, '"hey there"')).toBe('hey there')
+    expect(decoder.decodeJSON('"hey there"')).toBe('hey there')
   })
 
   it('can apply an endomorphic function to the decoder', () => {
     const decoder = module.map((x) => x * 5, module.number())
-    expect(module.decode(decoder, '10')).toBe(50)
+    expect(decoder.decodeJSON('10')).toBe(50)
   })
 
   it('can apply a funcition that transforms the type', () => {
     const decoder = module.map((x) => x.length, module.string())
-    expect(module.decode(decoder, '"hey"')).toEqual(3)
+    expect(decoder.decodeJSON('"hey"')).toEqual(3)
   })
 })
 
@@ -165,7 +165,7 @@ describe('tuple', () => {
         module.string(),
         module.number(),
       )
-      expect(module.decode(decoder, '["Dale Gribble", 47]'))
+      expect(decoder.decodeJSON('["Dale Gribble", 47]'))
     })
 
     it('decodes a 3 value tuple', () => {
@@ -174,7 +174,7 @@ describe('tuple', () => {
         module.string(),
         module.number(),
       )
-      expect(module.decode(decoder, '["Rusty", "Shackleford", 47]')).toEqual([
+      expect(decoder.decodeJSON('["Rusty", "Shackleford", 47]')).toEqual([
         "Rusty",
         "Shackleford",
         47
@@ -188,7 +188,7 @@ describe('tuple', () => {
         module.string(),
         module.number()
       )
-      expect(() => module.decode(decoder, '[54, 84]')).toThrowError(
+      expect(() => decoder.decodeJSON('[54, 84]')).toThrowError(
         'error decoding item 0 of tuple: expected string, got number'
       )
     })
@@ -202,7 +202,7 @@ describe('at', () => {
         ['a', 'b', 'c'],
         module.number()
       )
-      expect(module.decode(decoder, '{"a":{"b":{"c":123}}}')).toEqual(123)
+      expect(decoder.decodeJSON('{"a":{"b":{"c":123}}}')).toEqual(123)
     })
   })
 
@@ -212,7 +212,7 @@ describe('at', () => {
         ['yes'],
         module.string()
       )
-      expect(() => module.decode(decoder, '{"no":false}')).toThrowError(
+      expect(() => decoder.decodeJSON('{"no":false}')).toThrowError(
         'error decoding nested object: missing key: yes'
       )
     })
@@ -224,7 +224,7 @@ describe('at', () => {
         ['hello', 'world'],
         module.string()
       )
-      expect(() => module.decode(decoder, '{"hello":{"world":null}}')).toThrowError(
+      expect(() => decoder.decodeJSON('{"hello":{"world":null}}')).toThrowError(
         'error decoding nested object: expected string, got null'
       )
     })
@@ -237,7 +237,7 @@ describe('oneOf', () => {
       const decoder = module.oneOf(
         module.string()
       )
-      expect(module.decode(decoder, '"yo"')).toEqual('yo')
+      expect(decoder.decodeJSON('"yo"')).toEqual('yo')
     })
 
     it('decodes a value with multiple alternatives', () => {
@@ -247,7 +247,7 @@ describe('oneOf', () => {
           module.number()
         )
       )
-      expect(module.decode(decoder, '["hey", 10]')).toEqual([3, 10])
+      expect(decoder.decodeJSON('["hey", 10]')).toEqual([3, 10])
     })
   })
 
@@ -257,7 +257,7 @@ describe('oneOf', () => {
         module.string(),
         module.map(String, module.number())
       )
-      expect(() => module.decode(decoder, '[]')).toThrow()
+      expect(() => decoder.decodeJSON('[]')).toThrow()
     })
   })
 })
@@ -265,7 +265,7 @@ describe('oneOf', () => {
 describe('fail', () => {
   it('fails by itself', () => {
     const decoder = module.fail('dang')
-    expect(() => module.decode(decoder, '{"hey":"there"}')).toThrowError('dang')
+    expect(() => decoder.decodeJSON('{"hey":"there"}')).toThrowError('dang')
   })
 
   it('does not fail when not used during decoding', () => {
@@ -273,14 +273,14 @@ describe('fail', () => {
       module.number(),
       module.fail('dang')
     )
-    expect(module.decode(decoder, '3')).toEqual(3)
+    expect(decoder.decodeJSON('3')).toEqual(3)
   })
 })
 
 describe('succeed', () => {
   it('returns the value given', () => {
     const decoder = module.succeed('woohoo!')
-    expect(module.decode(decoder, '[]')).toEqual('woohoo!')
+    expect(decoder.decodeJSON('[]')).toEqual('woohoo!')
   })
 
   it('acts as the default clause with oneOf', () => {
@@ -288,13 +288,13 @@ describe('succeed', () => {
       module.string(),
       module.succeed('(nothing)')
     )
-    expect(module.decode(decoder, '[]')).toEqual('(nothing)')
+    expect(decoder.decodeJSON('[]')).toEqual('(nothing)')
   })
 })
 
 describe('andThen', () => {
   it('performs conditional decoding based on field', () => {
-    const vehicle = (t: string): module.IDecoder<string> => {
+    const vehicle = (t: string): module.Decoder<string> => {
       switch (t) {
         case 'train':
           return module.map(
@@ -316,8 +316,8 @@ describe('andThen', () => {
     const blueLine = `{"type":"train","color":"blue"}`
     const lambaAirlines = `{"type":"plane","airline":"lambda"}`
     const foot = `{"type":"Ehh"}`
-    expect(module.decode(decoder, blueLine)).toEqual('blue line')
-    expect(module.decode(decoder, lambaAirlines)).toEqual('lambda airlines')
-    expect(module.decode(decoder, foot)).toEqual("you're walkin', pal")
+    expect(decoder.decodeJSON(blueLine)).toEqual('blue line')
+    expect(decoder.decodeJSON(lambaAirlines)).toEqual('lambda airlines')
+    expect(decoder.decodeJSON(foot)).toEqual("you're walkin', pal")
   })
 })
