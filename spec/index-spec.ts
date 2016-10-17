@@ -8,15 +8,21 @@ describe('string', () => {
   })
 
   it('fails when given a number', () => {
-    expect(() => decoder.decodeJSON('1')).toThrowError('expected string, got number')
+    expect(() => decoder.decodeJSON('1')).toThrowError(
+      'error at root: expected string, got number'
+    )
   })
 
   it('fails when given null', () => {
-    expect(() => decoder.decodeJSON('null')).toThrowError('expected string, got null')
+    expect(() => decoder.decodeJSON('null')).toThrowError(
+      'error at root: expected string, got null'
+    )
   })
 
   it('fails when given a boolean', () => {
-    expect(() => decoder.decodeJSON('true')).toThrowError('expected string, got boolean')
+    expect(() => decoder.decodeJSON('true')).toThrowError(
+      'error at root: expected string, got boolean'
+    )
   })
 })
 
@@ -28,11 +34,15 @@ describe('number', () => {
   })
 
   it('fails when given a string', () => {
-    expect(() => decoder.decodeJSON('"hey"')).toThrowError('expected number, got string')
+    expect(() => decoder.decodeJSON('"hey"')).toThrowError(
+      'error at root: expected number, got string'
+    )
   })
 
   it('fails when given boolean', () => {
-    expect(() => decoder.decodeJSON('true')).toThrowError('expected number, got boolean')
+    expect(() => decoder.decodeJSON('true')).toThrowError(
+      'error at root: expected number, got boolean'
+    )
   })
 })
 
@@ -44,27 +54,15 @@ describe('boolean', () => {
   })
 
   it('fails when given a string', () => {
-    expect(() => decoder.decodeJSON('"hey"')).toThrowError('expected boolean, got string')
+    expect(() => decoder.decodeJSON('"hey"')).toThrowError(
+      'error at root: expected boolean, got string'
+    )
   })
 
   it('fails when given a number', () => {
-    expect(() => decoder.decodeJSON('1')).toThrowError('expected boolean, got number')
-  })
-})
-
-describe('list', () => {
-  const decoder = module.list(module.number())
-
-  it('works when given an array',() => {
-    expect(decoder.decodeJSON('[1, 2, 3]')).toEqual([1, 2, 3])
-  })
-
-  it('fails when given something else', () => {
-    expect(() => decoder.decodeJSON('"oops"')).toThrow()
-  })
-
-  it('fails when the elements are of the wrong type', () => {
-    expect(() => decoder.decodeJSON('["dang"]')).toThrow()
+    expect(() => decoder.decodeJSON('1')).toThrowError(
+      'error at root: expected boolean, got number'
+    )
   })
 })
 
@@ -76,7 +74,42 @@ describe('equal', () => {
 
   it('fails when given two different values', () => {
     const decoder = module.equal(42)
-    expect(() => decoder.decodeJSON('true')).toThrow()
+    expect(() => decoder.decodeJSON('true')).toThrowError(
+      'error at root: expected 42, got boolean'
+    )
+  })
+})
+
+describe('list', () => {
+  const decoder = module.list(module.number())
+
+  it('works when given an array',() => {
+    expect(decoder.decodeJSON('[1, 2, 3]')).toEqual([1, 2, 3])
+  })
+
+  it('fails when given something other than a list', () => {
+    expect(() => decoder.decodeJSON('"oops"')).toThrowError(
+      'error at root: expected list, got string'
+    )
+  })
+
+  describe("when given something other than an array", () => {
+    it('fails when the elements are of the wrong type', () => {
+      expect(() => decoder.decodeJSON('["dang"]')).toThrowError(
+        'error at [0]: expected number, got string'
+      )
+    })
+
+    it('properly displays nested errors', () => {
+      const decoder = module.list(
+        module.list(
+          module.list(module.number())
+        )
+      )
+      expect(() => decoder.decodeJSON('[[], [], [[1,2,3,false]]]')).toThrowError(
+        'error at [2][0][3]: expected number, got boolean'
+      )
+    })
   })
 })
 
@@ -109,23 +142,35 @@ describe('object', () => {
   })
 
   describe('when incorrect JSON', () => {
+    it('fails when not given an object', () => {
+      const decoder = module.object(
+        ['x', module.number()],
+        (x: number) => ({x})
+      )
+      expect(() => decoder.decodeJSON('true')).toThrowError(
+        `error at root: expected object, got boolean`
+      )
+    })
+
     it('reports a missing key', () => {
       const decoder = module.object(
         ['x', module.number()],
         (x: number) => ({x})
       )
-      expect(() => decoder.decodeJSON('{}')).toThrowError('missing keys: x')
+      expect(() => decoder.decodeJSON('{}')).toThrowError(
+        `error at root: expected object with keys: x`
+      )
     })
 
-    it('reports multiple missing keys', () => {
+    it('reports multiple missing keys in alphabetical order', () => {
       const decoder = module.object(
-        ['name', module.string()],
         ['x', module.number()],
         ['y', module.number()],
-        (name: string, x: number, y: number) => ({name, x, y})
+        ['?', module.succeed('????')],
+        (x: number, y: number, huh: string) => ({x, y, huh})
       )
       expect(() => decoder.decodeJSON('{"x": 5}')).toThrowError(
-        'missing keys: name, y'
+        `error at root: expected object with keys: "?", y`
       )
     })
 
@@ -135,7 +180,24 @@ describe('object', () => {
         (name: string) => {name}
       )
       expect(() => decoder.decodeJSON('{"name": 5}')).toThrowError(
-        `error decoding key "name": expected string, got number`
+        `error at .name: expected string, got number`
+      )
+    })
+
+    it('properly displays nested errors', () => {
+      const id: <A>(x: A) => A = (x: any) => x
+      const decoder = module.object(
+        ['hello', module.object(
+          ['hey', module.object(
+            ['Howdy!', module.string()
+            ], id
+          )], id
+        )], id
+      )
+      expect(() => decoder.decodeJSON(
+        '{"hello":{"hey":{"Howdy!":{}}}}'
+      )).toThrowError(
+        `error at .hello.hey["Howdy!"]: expected string, got object`
       )
     })
   })
@@ -152,9 +214,15 @@ describe('map', () => {
     expect(decoder.decodeJSON('10')).toBe(50)
   })
 
-  it('can apply a funcition that transforms the type', () => {
+  it('can apply a function that transforms the type', () => {
     const decoder = module.map((x) => x.length, module.string())
     expect(decoder.decodeJSON('"hey"')).toEqual(3)
+  })
+
+  it('reports exceptions in the callback', () => {
+    const error = new Error('gosh')
+    const decoder = module.map((x) => { throw error }, module.string())
+    expect(() => decoder.decodeJSON('error at root: error performing map: ${error.message}'))
   })
 })
 
@@ -185,11 +253,11 @@ describe('tuple', () => {
   describe('when given incorrect JSON', () => {
     it('throws an error', () => {
       const decoder = module.tuple(
-        module.string(),
-        module.number()
+        module.number(),
+        module.string()
       )
       expect(() => decoder.decodeJSON('[54, 84]')).toThrowError(
-        'error decoding item 0 of tuple: expected string, got number'
+        'error at [1]: expected string, got number'
       )
     })
   })
@@ -213,7 +281,7 @@ describe('at', () => {
         module.string()
       )
       expect(() => decoder.decodeJSON('{"no":false}')).toThrowError(
-        'error decoding nested object: missing key: yes'
+        'error at root: expected object with key: yes'
       )
     })
   })
@@ -225,7 +293,7 @@ describe('at', () => {
         module.string()
       )
       expect(() => decoder.decodeJSON('{"hello":{"world":null}}')).toThrowError(
-        'error decoding nested object: expected string, got null'
+        'error at .hello.world: expected string, got null'
       )
     })
   })
@@ -257,7 +325,9 @@ describe('oneOf', () => {
         module.string(),
         module.map(String, module.number())
       )
-      expect(() => decoder.decodeJSON('[]')).toThrow()
+      expect(() => decoder.decodeJSON('[]')).toThrowError(
+        `error at root: unexpected list`
+      )
     })
   })
 })
@@ -265,7 +335,9 @@ describe('oneOf', () => {
 describe('fail', () => {
   it('fails by itself', () => {
     const decoder = module.fail('dang')
-    expect(() => decoder.decodeJSON('{"hey":"there"}')).toThrowError('dang')
+    expect(() => decoder.decodeJSON('{"hey":"there"}')).toThrowError(
+      'error at root: dang'
+    )
   })
 
   it('does not fail when not used during decoding', () => {
@@ -293,31 +365,48 @@ describe('succeed', () => {
 })
 
 describe('andThen', () => {
-  it('performs conditional decoding based on field', () => {
-    const vehicle = (t: string): module.Decoder<string> => {
-      switch (t) {
-        case 'train':
-          return module.map(
-            (color) => `${color} line`,
+  const vehicle = (t: string): module.Decoder<string> => {
+    switch (t) {
+      case 'train':
+        return module.map(
+          (color) => `${color} line`,
             module.at(['color'], module.string())
-          )
-        case 'plane':
-          return module.map(
-            (airline) => `${airline} airlines`,
+      )
+      case 'plane':
+        return module.map(
+          (airline) => `${airline} airlines`,
             module.at(['airline'], module.string())
-          )
-        }
-        return module.succeed("you're walkin', pal")
+      )
     }
-    const decoder = module.andThen(
-      module.at(['type'], module.string()),
-      vehicle
-    )
+    return module.succeed("you're walkin', pal")
+  }
+  const decoder = module.andThen(
+    module.at(['type'], module.string()),
+    vehicle
+  )
+
+  it('performs conditional decoding based on field', () => {
     const blueLine = `{"type":"train","color":"blue"}`
     const lambaAirlines = `{"type":"plane","airline":"lambda"}`
     const foot = `{"type":"Ehh"}`
     expect(decoder.decodeJSON(blueLine)).toEqual('blue line')
     expect(decoder.decodeJSON(lambaAirlines)).toEqual('lambda airlines')
     expect(decoder.decodeJSON(foot)).toEqual("you're walkin', pal")
+  })
+
+  describe('when the first decoder fails', () => {
+    it('throws an error', () => {
+      expect(() => decoder.decodeJSON('{"type":null}')).toThrowError(
+        `error at .type: expected string, got null`
+      )
+    })
+  })
+
+  describe('when the second decoder fails', () => {
+    it('throws an error', () => {
+      expect(() => decoder.decodeJSON('{"type":"train","color":false}')).toThrowError(
+        `error at .color: expected string, got boolean`
+      )
+    })
   })
 })
