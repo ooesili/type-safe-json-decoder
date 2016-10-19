@@ -14,19 +14,23 @@ function decoderError ({at, expected, got}: ErrorInfo): Error {
   return new Error(`error at ${at}: expected ${expected}, got ${prettyPrint(got)}`)
 }
 
+let decode: <T>(decoder: Decoder<T>, object: any, at: string) => T
+
 export class Decoder<T> {
   private fn: (object: any, at: string) => T
+
+  private static _ignore = (() => {
+    decode = <T>(decoder: Decoder<T>, object: any, at: string): T => {
+      return decoder.fn(object, at)
+    }
+  })()
 
   constructor (fn: (object: any, at: string) => T) {
     this.fn = fn
   }
 
   decodeJSON (json: string): T {
-    return this.decode(JSON.parse(json), 'root')
-  }
-
-  decode (object: any, at: string): T {
-    return this.fn(object, at)
+    return this.fn(JSON.parse(json), 'root')
   }
 }
 
@@ -134,7 +138,7 @@ export function list <T>(element: Decoder<T>): Decoder<T[]> {
       })
     }
 
-    return json.map((e, i) => element.decode(e, pushLocation(at, i)))
+    return json.map((e, i) => decode(element, e, pushLocation(at, i)))
   })
 }
 
@@ -170,7 +174,7 @@ export function object <T>(...args: any[]): Decoder<T> {
 
     decoders.forEach(([key, decoder]) => {
       if (key in json) {
-        values.push(decoder.decode(json[key], pushLocation(at, key)))
+        values.push(decode(decoder, json[key], pushLocation(at, key)))
       } else {
         missingKeys.push(key)
       }
@@ -194,7 +198,7 @@ export function object <T>(...args: any[]): Decoder<T> {
 
 export function map <T1, T2>(transform: (v: T1) => T2, decoder: Decoder<T1>): Decoder<T2> {
   return new Decoder((json, at) => {
-    return transform(decoder.decode(json, at))
+    return transform(decode(decoder, json, at))
   })
 }
 
@@ -215,7 +219,7 @@ export function tuple <A, B, C, D, E, F, G, H, I, J, K, L, M, N>(ad: Decoder<A>,
 export function tuple (...decoders: Decoder<any>[]): Decoder<any> {
   return new Decoder((json, at) => (
     decoders.map((decoder, i) => {
-      return decoder.decode(json[i], pushLocation(at, i))
+      return decode(decoder, json[i], pushLocation(at, i))
     })
   ))
 }
@@ -234,19 +238,19 @@ export function at <T>(keyPath: string[], decoder: Decoder<T>): Decoder<T> {
       return {result: value, resultAt: pushLocation(resultAt, key)}
     }, {result: json, resultAt: at})
 
-    return decoder.decode(result, resultAt)
+    return decode(decoder, result, resultAt)
   })
 }
 
 export function oneOf <T>(first: Decoder<T>, ...rest: Decoder<T>[]): Decoder<T> {
   return new Decoder((json, at) => {
     try {
-      return first.decode(json, at)
+      return decode(first, json, at)
     } catch (e) {}
 
     for (const decoder of rest) {
       try {
-        return decoder.decode(json, at)
+        return decode(decoder, json, at)
       } catch (e) {}
     }
     throw new Error(`error at ${at}: unexpected ${prettyPrint(json)}`)
@@ -267,6 +271,6 @@ export function succeed <T>(value: T): Decoder<T> {
 
 export function andThen <A, B>(ad: Decoder<A>, cb: (a: A) => Decoder<B>): Decoder<B> {
   return new Decoder((json, at) => {
-    return cb(ad.decode(json, at)).decode(json, at)
+    return decode(cb(decode(ad, json, at)), json, at)
   })
 }
