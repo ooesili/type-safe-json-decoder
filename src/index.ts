@@ -5,8 +5,6 @@ interface ErrorInfo {
 }
 
 function decoderError ({at, expected, got}: ErrorInfo): Error {
-  let message: string
-
   if (typeof got === 'undefined') {
     return new Error(`error at ${at}: expected ${expected}`)
   }
