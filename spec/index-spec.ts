@@ -80,16 +80,16 @@ describe('equal', () => {
   })
 })
 
-describe('list', () => {
-  const decoder = module.list(module.number())
+describe('array', () => {
+  const decoder = module.array(module.number())
 
   it('works when given an array',() => {
     expect(decoder.decodeJSON('[1, 2, 3]')).toEqual([1, 2, 3])
   })
 
-  it('fails when given something other than a list', () => {
+  it('fails when given something other than a array', () => {
     expect(() => decoder.decodeJSON('"oops"')).toThrowError(
-      'error at root: expected list, got string'
+      'error at root: expected array, got string'
     )
   })
 
@@ -101,9 +101,9 @@ describe('list', () => {
     })
 
     it('properly displays nested errors', () => {
-      const decoder = module.list(
-        module.list(
-          module.list(module.number())
+      const decoder = module.array(
+        module.array(
+          module.array(module.number())
         )
       )
       expect(() => decoder.decodeJSON('[[], [], [[1,2,3,false]]]')).toThrowError(
@@ -309,7 +309,7 @@ describe('oneOf', () => {
     })
 
     it('decodes a value with multiple alternatives', () => {
-      const decoder = module.list(
+      const decoder = module.array(
         module.oneOf(
           module.map((s) => s.length, module.string()),
           module.number()
@@ -326,7 +326,7 @@ describe('oneOf', () => {
         module.map(String, module.number())
       )
       expect(() => decoder.decodeJSON('[]')).toThrowError(
-        `error at root: unexpected list`
+        `error at root: unexpected array`
       )
     })
   })

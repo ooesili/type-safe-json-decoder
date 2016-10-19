@@ -40,7 +40,7 @@ function prettyPrint (value: any): string {
   }
 
   if (value instanceof Array) {
-    return 'list'
+    return 'array'
   }
 
   return typeof value
@@ -126,12 +126,12 @@ export function equal <T>(value: T): Decoder<T> {
   })
 }
 
-export function list <T>(element: Decoder<T>): Decoder<T[]> {
+export function array <T>(element: Decoder<T>): Decoder<T[]> {
   return new Decoder((json, at) => {
     if (!(json instanceof Array)) {
       throw decoderError({
         at,
-        expected: 'list',
+        expected: 'array',
         got: json
       })
     }
