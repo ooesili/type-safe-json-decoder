@@ -2,8 +2,10 @@
   "name": "type-safe-json-decoder",
   "version": "0.0.0",
   "description": "Elm-inspired JSON decoder for typescript",
-  "main": "src/index.ts",
+  "main": "src/index.js",
+  "typings": "src/index.d.ts",
   "scripts": {
+    "build": "tsc && rm -r dist/spec && cp README.md LICENSE package.json dist",
     "typings": "typings install",
     "test": "tsc && node util/test.js",
     "docs": "typedoc --out docs --excludeNotExported --excludePrivate src"
