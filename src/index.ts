@@ -317,19 +317,36 @@ export function tuple (...decoders: Decoder<any>[]): Decoder<any> {
 /**
  * Reaches into a nested data structure and decodes the value there. Useful if
  * you only care about a single value in a nested data structure, or if you
- * want to skip past a top level data key.
+ * want to skip past a top level data key. Can perform lookups on nested arrays
+ * and objects.
  * @param keyPath Path of key lookups into a nested object.
  * @param decoder Decoder to use on the nested value.
  * @returns A decoder that decodes the value of the nested object.
  */
-export function at <T>(keyPath: string[], decoder: Decoder<T>): Decoder<T> {
+export function at <T>(keyPath: (string|number)[], decoder: Decoder<T>): Decoder<T> {
   return createDecoder((json, at) => {
     const {result, resultAt} = keyPath.reduce(({result, resultAt}, key) => {
       const value = result[key]
       if (value === undefined) {
+        if (typeof key === 'number') {
+          if (result instanceof Array) {
+            throw decoderError({
+              at,
+              expected: `array: index out of range: ${key} > ${result.length - 1}`
+            })
+          }
+
+          throw decoderError({
+            at,
+            expected: `array with index ${key}`,
+            got: json
+          })
+        }
+
         throw decoderError({
           at,
-          expected: `object with key: ${key}`
+          expected: `object with key ${escapeKey(key)}`,
+          got: result
         })
       }
 

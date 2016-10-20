@@ -274,24 +274,68 @@ describe('tuple', () => {
 
 describe('at', () => {
   describe('when given a valid object', () => {
-    it('can look up a nested value', () => {
+    it('can look up a value in nested objects', () => {
       const decoder = module.at(
         ['a', 'b', 'c'],
         module.number()
       )
       expect(decoder.decodeJSON('{"a":{"b":{"c":123}}}')).toEqual(123)
     })
+
+    it('can look up a value in nested arrays', () => {
+      const decoder = module.at(
+        [2, 1, 0],
+        module.string()
+      )
+      expect(decoder.decodeJSON('[1,2,[3,["blastoff"]]]')).toEqual('blastoff')
+    })
+
+    it('can look up a value in mixed nested arrays and object', () => {
+      const decoder = module.at(
+        [0, 'value'],
+        module.number()
+      )
+      expect(decoder.decodeJSON('[{"value":7}]')).toEqual(7)
+    })
   })
 
-  describe('when the given object is missing a key', () => {
-    it('throws an error', () => {
+  describe('when the given value is missing a key', () => {
+    describe('when given a string key', () => {
       const decoder = module.at(
         ['yes'],
         module.string()
       )
-      expect(() => decoder.decodeJSON('{"no":false}')).toThrowError(
-        'error at root: expected object with key: yes'
+
+      it('throws an error when decoding an object', () => {
+        expect(() => decoder.decodeJSON('{"no":false}')).toThrowError(
+          'error at root: expected object with key yes, got object'
+        )
+      })
+
+      it('throws an error when decoding an array', () => {
+        expect(() => decoder.decodeJSON('[1,2,3]')).toThrowError(
+          'error at root: expected object with key yes, got array'
+        )
+      })
+    })
+
+    describe('when given a number key', () => {
+      const decoder = module.at(
+        [2],
+        module.string()
       )
+
+      it('throws an error when decoding an array', () => {
+        expect(() => decoder.decodeJSON('[0,1]')).toThrowError(
+          'error at root: expected array: index out of range: 2 > 1'
+        )
+      })
+
+      it('throws an error when decoding an object', () => {
+        expect(() => decoder.decodeJSON('{"hey":"there"}')).toThrowError(
+          `error at root: expected array with index 2, got object`
+        )
+      })
     })
   })
 
