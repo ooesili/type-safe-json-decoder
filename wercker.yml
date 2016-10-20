@@ -18,13 +18,13 @@ build:
 
 docs:
   steps:
-    - npm-install
-    - script:
-        name: typedoc
-        code: |
-          npm run docs
-          touch docs/.nojekyll
-    - lukevivier/gh-pages@0.2.1:
-        token: $GITHUB_TOKEN
-        repo: ooesili/type-safe-json-decoder
-        basedir: docs
+  - npm-install
+  - script:
+      name: typedoc
+      code: |
+        node_modules/typedoc/bin/typedoc --out docs --excludeNotExported --excludePrivate src
+        touch docs/.nojekyll
+  - lukevivier/gh-pages@0.2.1:
+      token: $GITHUB_TOKEN
+      repo: ooesili/type-safe-json-decoder
+      basedir: docs
