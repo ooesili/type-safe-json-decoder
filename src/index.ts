@@ -323,7 +323,7 @@ export function tuple (...decoders: Decoder<any>[]): Decoder<any> {
  * @param decoder Decoder to use on the nested value.
  * @returns A decoder that decodes the value of the nested object.
  */
-export function at <T>(keyPath: (string|number)[], decoder: Decoder<T>): Decoder<T> {
+export function at <T>(keyPath: Array<string|number>, decoder: Decoder<T>): Decoder<T> {
   return createDecoder((json, at) => {
     const {result, resultAt} = keyPath.reduce(({result, resultAt}, key) => {
       const value = result[key]
