@@ -1,6 +1,7 @@
 Type-safe JSON Decoder
 ======================
 [![wercker status](https://app.wercker.com/status/981a74cb4e88dcfa211647cc71752035/s/master "wercker status")](https://app.wercker.com/project/byKey/981a74cb4e88dcfa211647cc71752035)
+[![typedoc](https://img.shields.io/badge/typedoc-reference-blue.svg?style=flat-square)][docs]
 [![npm](https://img.shields.io/npm/v/type-safe-json-decoder.svg?style=flat-square)](https://www.npmjs.com/package/type-safe-json-decoder)
 [![npm](https://img.shields.io/npm/l/type-safe-json-decoder.svg?style=flat-square "license")](https://github.com/ooesili/type-safe-json-decoder/blob/master/LICENSE)
 
