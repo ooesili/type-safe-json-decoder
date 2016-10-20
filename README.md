@@ -1,9 +1,19 @@
 Type-safe JSON Decoder
 ======================
 [![wercker status](https://app.wercker.com/status/981a74cb4e88dcfa211647cc71752035/s/master "wercker status")](https://app.wercker.com/project/byKey/981a74cb4e88dcfa211647cc71752035)
+[![npm](https://img.shields.io/npm/v/type-safe-json-decoder.svg?style=flat-square)](https://www.npmjs.com/package/type-safe-json-decoder)
+[![npm](https://img.shields.io/npm/l/type-safe-json-decoder.svg?style=flat-square "license")](https://github.com/ooesili/type-safe-json-decoder/blob/master/LICENSE)
 
 A strongly typed JSON decoder and validator inspired by Elm, namely the
 [Json.Decode][elm-decode] package.
+
+
+Installation
+------------
+
+```
+npm install --save type-safe-json-decoder
+```
 
 
 Introduction
