@@ -128,7 +128,7 @@ describe('object', () => {
         ['payload', module.object(
           ['x', module.number()],
           ['y', module.number()],
-          (x, y) => {x, y}
+          (x, y) => ({x, y})
         )],
         ['error', module.equal(false)],
         (payload, error) => ({payload, error})
@@ -138,6 +138,15 @@ describe('object', () => {
         payload: {x: 5, y: 2},
         error: false
       })
+    })
+
+    it('can decode into something other than an object', () => {
+      const decoder = module.object(
+        ['x', module.number()],
+        ['y', module.number()],
+        (x, y) => [x, y]
+      )
+      expect(decoder.decodeJSON('{"x":3,"y":4}')).toEqual([3, 4])
     })
   })
 
@@ -221,7 +230,7 @@ describe('map', () => {
 
   it('reports exceptions in the callback', () => {
     const error = new Error('gosh')
-    const decoder = module.map((x) => { throw error }, module.string())
+    const decoder = module.map(() => { throw error }, module.string())
     expect(() => decoder.decodeJSON('error at root: error performing map: ${error.message}'))
   })
 })

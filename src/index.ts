@@ -40,6 +40,8 @@ export class Decoder<T> {
   }
 
   private static _ignore = (() => {
+    Decoder._ignore
+
     decode = <T>(decoder: Decoder<T>, object: any, at: string): T => {
       return decoder.fn(object, at)
     }
@@ -259,7 +261,7 @@ export function object <T>(...args: any[]): Decoder<T> {
       })
     }
 
-    return json
+    return cons(...values)
   })
 }
 
@@ -370,7 +372,7 @@ export function oneOf <T>(first: Decoder<T>, ...rest: Decoder<T>[]): Decoder<T> 
  * @returns Never since it always throws an error.
  */
 export function fail (message: string): Decoder<never> {
-  return createDecoder((json, at) => {
+  return createDecoder((_json, at) => {
     throw new Error(`error at ${at}: ${message}`)
   })
 }
