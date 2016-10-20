@@ -1,6 +1,6 @@
 {
   "name": "type-safe-json-decoder",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Elm-inspired JSON decoder for typescript",
   "main": "src/index.js",
   "typings": "src/index.d.ts",
