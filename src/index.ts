@@ -36,12 +36,7 @@ export class Decoder<T> {
     }
   })()
 
-  /**
-   * Create a new decoder using the given decoder function. The interface of
-   * this method is subject to change, and should not be considered part of
-   * this module's external API.
-   */
-  constructor (fn: (object: any, at: string) => T) {
+  protected constructor (fn: (object: any, at: string) => T) {
     this.fn = fn
   }
 
@@ -54,6 +49,12 @@ export class Decoder<T> {
    */
   decodeJSON (json: string): T {
     return this.fn(JSON.parse(json), 'root')
+  }
+}
+
+class InternalDecoder<T> extends Decoder<T> {
+  constructor (fn: (object: any, at: string) => T) {
+    super(fn)
   }
 }
 
@@ -103,7 +104,7 @@ function pushLocation (at: string, key: string | number): string {
  * @returns A Decoder that decodes a string.
  */
 export function string (): Decoder<string> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     if (typeof json !== 'string') {
       throw decoderError({
         at,
@@ -120,7 +121,7 @@ export function string (): Decoder<string> {
  * @returns A Decoder that decodes a number.
  */
 export function number (): Decoder<number> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     if (typeof json !== 'number') {
       throw decoderError({
         at,
@@ -137,7 +138,7 @@ export function number (): Decoder<number> {
  * @returns A Decoder that decodes a boolean.
  */
 export function boolean (): Decoder<boolean> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     if (typeof json !== 'boolean') {
       throw decoderError({
         at,
@@ -164,7 +165,7 @@ export function boolean (): Decoder<boolean> {
  * @returns A Decoder that decodes a value that equals the given value.
  */
 export function equal <T>(value: T): Decoder<T> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     if (json !== value) {
       throw decoderError({
         at,
@@ -186,7 +187,7 @@ export function equal <T>(value: T): Decoder<T> {
  * @returns A Decoder that will decode an array of elements of the given type.
  */
 export function array <T>(element: Decoder<T>): Decoder<T[]> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     if (!(json instanceof Array)) {
       throw decoderError({
         at,
@@ -223,7 +224,7 @@ export function object <T>(...args: any[]): Decoder<T> {
   const cons: (...args: any[]) => T = args[args.length - 1]
   const decoders: EntryDecoder<any>[] = args.slice(0, args.length - 1)
 
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     const missingKeys: string[] = []
     const values: any[] = []
 
@@ -275,7 +276,7 @@ export function object <T>(...args: any[]): Decoder<T> {
  * @returns A decoder that will apply the function after decoding the input.
  */
 export function map <T1, T2>(transform: (v: T1) => T2, decoder: Decoder<T1>): Decoder<T2> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     return transform(decode(decoder, json, at))
   })
 }
@@ -301,7 +302,7 @@ export function tuple <A, B, C, D, E, F, G, H, I, J, K, L>(ad: Decoder<A>, bd: D
 export function tuple <A, B, C, D, E, F, G, H, I, J, K, L, M>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>, md: Decoder<M>): Decoder<[A, B, C, D, E, F, G, H, I, J, K, L, M]>
 export function tuple <A, B, C, D, E, F, G, H, I, J, K, L, M, N>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>, md: Decoder<M>, nd: Decoder<N>): Decoder<[A, B, C, D, E, F, G, H, I, J, K, L, M, N]>
 export function tuple (...decoders: Decoder<any>[]): Decoder<any> {
-  return new Decoder((json, at) => (
+  return new InternalDecoder((json, at) => (
     decoders.map((decoder, i) => {
       return decode(decoder, json[i], pushLocation(at, i))
     })
@@ -317,7 +318,7 @@ export function tuple (...decoders: Decoder<any>[]): Decoder<any> {
  * @returns A decoder that decodes the value of the nested object.
  */
 export function at <T>(keyPath: string[], decoder: Decoder<T>): Decoder<T> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     const {result, resultAt} = keyPath.reduce(({result, resultAt}, key) => {
       const value = result[key]
       if (value === undefined) {
@@ -346,7 +347,7 @@ export function at <T>(keyPath: string[], decoder: Decoder<T>): Decoder<T> {
  * @returns A decoder or throws an Error of no decoders succeeded.
  */
 export function oneOf <T>(first: Decoder<T>, ...rest: Decoder<T>[]): Decoder<T> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     try {
       return decode(first, json, at)
     } catch (e) {}
@@ -366,7 +367,7 @@ export function oneOf <T>(first: Decoder<T>, ...rest: Decoder<T>[]): Decoder<T> 
  * @returns Never since it always throws an error.
  */
 export function fail (message: string): Decoder<never> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     throw new Error(`error at ${at}: ${message}`)
   })
 }
@@ -377,7 +378,7 @@ export function fail (message: string): Decoder<never> {
  * @returns A decoder that always returns the given value.
  */
 export function succeed <T>(value: T): Decoder<T> {
-  return new Decoder(() => {
+  return new InternalDecoder(() => {
     return value
   })
 }
@@ -394,7 +395,7 @@ export function succeed <T>(value: T): Decoder<T> {
 */
 
 export function andThen <A, B>(ad: Decoder<A>, cb: (a: A) => Decoder<B>): Decoder<B> {
-  return new Decoder((json, at) => {
+  return new InternalDecoder((json, at) => {
     return decode(cb(decode(ad, json, at)), json, at)
   })
 }
