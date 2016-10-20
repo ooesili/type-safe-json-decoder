@@ -1,3 +1,10 @@
+/**
+ * This module can be used to safely decode JSON into a typed value. All of the
+ * decoders in this module are pure and reusable.
+ */
+
+/**
+ */
 interface ErrorInfo {
   at: string
   expected: string
@@ -14,6 +21,12 @@ function decoderError ({at, expected, got}: ErrorInfo): Error {
 
 let decode: <T>(decoder: Decoder<T>, object: any, at: string) => T
 
+/**
+ * A Decoder represents a way to decode JSON into type T. Provided in this
+ * module are Decoders for primitive JSON types, as well as a set of
+ * higher-order Decoders that can be composed together to decode complex nested
+ * objects.
+ */
 export class Decoder<T> {
   private fn: (object: any, at: string) => T
 
@@ -23,15 +36,31 @@ export class Decoder<T> {
     }
   })()
 
+  /**
+   * Create a new decoder using the given decoder function. The interface of
+   * this method is subject to change, and should not be considered part of
+   * this module's external API.
+   */
   constructor (fn: (object: any, at: string) => T) {
     this.fn = fn
   }
 
+  /**
+   * Attempt to decode some JSON input into a value of type T. Throws a
+   * descriptive error if the JSON input does not match the structure described
+   * by the Decoder.
+   * @param json A JSON encoded string.
+   * @returns A value of the type described by the Decoder.
+   */
   decodeJSON (json: string): T {
     return this.fn(JSON.parse(json), 'root')
   }
 }
 
+/**
+ * Represents the property of an object to decode. See [object](#object) for
+ * more details.
+ */
 export type EntryDecoder<T> = [string, Decoder<T>]
 
 function prettyPrint (value: any): string {
@@ -70,6 +99,9 @@ function pushLocation (at: string, key: string | number): string {
   return `${at}[${JSON.stringify(key)}]`
 }
 
+/**
+ * @returns A Decoder that decodes a string.
+ */
 export function string (): Decoder<string> {
   return new Decoder((json, at) => {
     if (typeof json !== 'string') {
@@ -84,6 +116,9 @@ export function string (): Decoder<string> {
   })
 }
 
+/**
+ * @returns A Decoder that decodes a number.
+ */
 export function number (): Decoder<number> {
   return new Decoder((json, at) => {
     if (typeof json !== 'number') {
@@ -98,6 +133,9 @@ export function number (): Decoder<number> {
   })
 }
 
+/**
+ * @returns A Decoder that decodes a boolean.
+ */
 export function boolean (): Decoder<boolean> {
   return new Decoder((json, at) => {
     if (typeof json !== 'boolean') {
@@ -112,6 +150,19 @@ export function boolean (): Decoder<boolean> {
   })
 }
 
+/**
+ * Decode a value and make sure the result equals another value. Useful for
+ * checking for `null`.
+ * ```typescript
+ * const decoder = object(
+ *   ['shouldBeNull', equal(null)],
+ *   (shouldBeNull) => ({shouldBeNull})
+ * )
+ * decoder.decodeJSON('{"shouldBeNull": null}')
+ * ```
+ * @param value Value that the input must equal (`===`).
+ * @returns A Decoder that decodes a value that equals the given value.
+ */
 export function equal <T>(value: T): Decoder<T> {
   return new Decoder((json, at) => {
     if (json !== value) {
@@ -126,6 +177,14 @@ export function equal <T>(value: T): Decoder<T> {
   })
 }
 
+/**
+ * Decode an array using another decoder for each element. Can only decode
+ * arrays of a single type. If this feels like a limitation, you may be looking
+ * for [tuple](#tuple), or perhaps [andThen](#andthen) paired with TypeScript's
+ * union types.
+ * @param element A Decoder that decodes the element type of an array.
+ * @returns A Decoder that will decode an array of elements of the given type.
+ */
 export function array <T>(element: Decoder<T>): Decoder<T[]> {
   return new Decoder((json, at) => {
     if (!(json instanceof Array)) {
@@ -140,6 +199,12 @@ export function array <T>(element: Decoder<T>): Decoder<T[]> {
   })
 }
 
+/**
+ * Decode an object with the given fields and types.
+ * @param ad One or more EntryDecoders describing the object's fields.
+ * @param cons Constructor that uses the results from the given EntryDecoders.
+ * @returns A Decoder that will decode an object of the given type.
+ */
 export function object <T, A>(ad: EntryDecoder<A>, cons: (a: A) => T): Decoder<T>
 export function object <T, A, B>(ad: EntryDecoder<A>, bd: EntryDecoder<B>, cons: (a: A, b: B) => T): Decoder<T>
 export function object <T, A, B, C>(ad: EntryDecoder<A>, bd: EntryDecoder<B>, cd: EntryDecoder<C>, cons: (a: A, b: B, c: C) => T): Decoder<T>
@@ -194,12 +259,33 @@ export function object <T>(...args: any[]): Decoder<T> {
   })
 }
 
+/**
+ * Maps a function over the value returned by a decoder. Useful for creating
+ * fancier objects from builtin types.
+ *
+ * ```typescript
+ * import Immutable from 'immutable'
+ *
+ * const decoder = map(
+ *   Immutable.List,
+ *   array(number())
+ * )
+ * ```
+ * @param tranform A function to apply to the decoded value.
+ * @returns A decoder that will apply the function after decoding the input.
+ */
 export function map <T1, T2>(transform: (v: T1) => T2, decoder: Decoder<T1>): Decoder<T2> {
   return new Decoder((json, at) => {
     return transform(decode(decoder, json, at))
   })
 }
 
+/**
+ * Decodes a tuple from an array.  If the length of the array is not known at
+ * compile time, you're probably looking for [array](#array).
+ * @param ad One or more decoders for each element of the array.
+ * @returns A decoder return a tuple containing each decoded element.
+ */
 export function tuple <A>(ad: Decoder<A>): Decoder<[A]>
 export function tuple <A, B>(ad: Decoder<A>, bd: Decoder<B>): Decoder<[A, B]>
 export function tuple <A, B, C>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>): Decoder<[A, B, C]>
@@ -222,6 +308,14 @@ export function tuple (...decoders: Decoder<any>[]): Decoder<any> {
   ))
 }
 
+/**
+ * Reaches into a nested data structure and decodes the value there. Useful if
+ * you only care about a single value in a nested data structure, or if you
+ * want to skip past a top level data key.
+ * @param keyPath Path of key lookups into a nested object.
+ * @param decoder Decoder to use on the nested value.
+ * @returns A decoder that decodes the value of the nested object.
+ */
 export function at <T>(keyPath: string[], decoder: Decoder<T>): Decoder<T> {
   return new Decoder((json, at) => {
     const {result, resultAt} = keyPath.reduce(({result, resultAt}, key) => {
@@ -240,6 +334,17 @@ export function at <T>(keyPath: string[], decoder: Decoder<T>): Decoder<T> {
   })
 }
 
+/**
+ * Try multiple decoders on a value. Useful when paired with union types, or as
+ * a way to provide a default value if something goes wrong. No decoders after
+ * the first successful one will be tried. In that way `oneOf` can be thought
+ * of a short circuit `OR` operator for decoders.
+ *
+ * The `first`/`rest` split is to make sure at least one decoder is specified.
+ * @param first First decoder to try.
+ * @param rest Fallback decoders to try in order if the first fails.
+ * @returns A decoder or throws an Error of no decoders succeeded.
+ */
 export function oneOf <T>(first: Decoder<T>, ...rest: Decoder<T>[]): Decoder<T> {
   return new Decoder((json, at) => {
     try {
@@ -255,17 +360,38 @@ export function oneOf <T>(first: Decoder<T>, ...rest: Decoder<T>[]): Decoder<T> 
   })
 }
 
+/**
+ * A decoder that always fails with the given error message.
+ * @param message Message to throw when this decoder is used.
+ * @returns Never since it always throws an error.
+ */
 export function fail (message: string): Decoder<never> {
   return new Decoder((json, at) => {
     throw new Error(`error at ${at}: ${message}`)
   })
 }
 
+/**
+ * A decoder that always succeeds with the given value.
+ * @param value Value that always gets returned when this decoder is used.
+ * @returns A decoder that always returns the given value.
+ */
 export function succeed <T>(value: T): Decoder<T> {
   return new Decoder(() => {
     return value
   })
 }
+
+/**
+ * Intelligently decode a value based on the result of another decoder. Useful
+ * decoding on object whose type or structure is not immediately known. The
+ * first decoder can be used to look at part of the object, then the second one
+ * can can use the result of that decoder to decide on how to actually decode
+ * the object.
+ * @param ad First decoder to run against the value.
+ * @param cb Callback that receives the previous result and returns a decoder.
+ * @returns The decoder returned by from the callback function.
+*/
 
 export function andThen <A, B>(ad: Decoder<A>, cb: (a: A) => Decoder<B>): Decoder<B> {
   return new Decoder((json, at) => {
