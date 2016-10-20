@@ -67,4 +67,4 @@ Detalied API documentation can be found [here][docs]
 
 
 [elm-decode]: http://package.elm-lang.org/packages/elm-lang/core/latest/Json-Decode
-[docs]: https://ooesili.github.io/type-safe-json-decoder.
+[docs]: https://ooesili.github.io/type-safe-json-decoder
