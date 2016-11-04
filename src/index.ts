@@ -421,3 +421,37 @@ export function andThen <A, B>(ad: Decoder<A>, cb: (a: A) => Decoder<B>): Decode
     return decode(cb(decode(ad, obj, at)), obj, at)
   })
 }
+
+/**
+ * Decode a union type. Given multiple decoders whose result type is a member
+ * of the union, try each one in order until one succeeds. Works similarly to
+ * [oneOf](#oneof), except that instead of the result being of single type, the
+ * result is the union of all given decoder types.
+ * @param ad A decoder for a member of the union.
+ * @param bd A decoder for another member of the union.
+ * @returns A decoder or throws an Error of no decoders succeeded.
+ */
+
+export function union <A, B>(ad: Decoder<A>, bd: Decoder<B>): Decoder<A | B>
+export function union <A, B, C>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>): Decoder<A | B | C>
+export function union <A, B, C, D>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>): Decoder<A | B | C | D>
+export function union <A, B, C, D, E>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>): Decoder<A | B | C | D | E>
+export function union <A, B, C, D, E, F>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>): Decoder<A | B | C | D | E | F>
+export function union <A, B, C, D, E, F, G>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>): Decoder<A | B | C | D | E | F | G>
+export function union <A, B, C, D, E, F, G, H>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>): Decoder<A | B | C | D | E | F | G | H>
+export function union <A, B, C, D, E, F, G, H, I>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>): Decoder<A | B | C | D | E | F | G | H | I>
+export function union <A, B, C, D, E, F, G, H, I, J>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>): Decoder<A | B | C | D | E | F | G | H | I | J>
+export function union <A, B, C, D, E, F, G, H, I, J, K>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>): Decoder<A | B | C | D | E | F | G | H | I | J | K>
+export function union <A, B, C, D, E, F, G, H, I, J, K, L>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>): Decoder<A | B | C | D | E | F | G | H | I | J | K | L>
+export function union <A, B, C, D, E, F, G, H, I, J, K, L, M>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>, md: Decoder<M>): Decoder<A | B | C | D | E | F | G | H | I | J | K | L | M>
+export function union <A, B, C, D, E, F, G, H, I, J, K, L, M, N>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>, md: Decoder<M>, nd: Decoder<N>): Decoder<A | B | C | D | E | F | G | H | I | J | K | L | M | N>
+export function union (...decoders: Decoder<any>[]): Decoder<any> {
+  return createDecoder((obj, at) => {
+    for (const decoder of decoders) {
+      try {
+        return decode(decoder, obj, at)
+      } catch (e) {}
+    }
+    throw new Error(`error at ${at}: unexpected ${prettyPrint(obj)}`)
+  })
+}

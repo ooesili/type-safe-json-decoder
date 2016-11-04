@@ -4,13 +4,15 @@ const compose = (...fs) => fs.reduce((f, g) => (x) => f(g(x)))
 
 const joinArgs = (args) => args.join(', ')
 
+const joinUnion = (args) => args.join(' | ')
+
 const aritiesOf = (letters) => slices(letters).slice(1)
 
 const formatDecoderArg = (letter) => (
-  `${letter.toLowerCase()}d: IDecoder<${letter}>`
+  `${letter.toLowerCase()}d: Decoder<${letter}>`
 )
 const formatEntryDecoderArg = (letter) => (
-  `${letter.toLowerCase()}d: IEntryDecoder<${letter}>`
+  `${letter.toLowerCase()}d: EntryDecoder<${letter}>`
 )
 const formatNormalArg = (letter) => (
   `${letter.toLowerCase()}: ${letter}`
@@ -23,7 +25,7 @@ const objectFormat = {
     callbacks: letters.map(formatNormalArg)
   }),
   formatString: ({generics, decoders, callbacks}) => (
-    `export function object <T, ${joinArgs(generics)}>(${joinArgs(decoders)}, cons: (${joinArgs(callbacks)}) => T): IDecoder<T>`
+    `export function object <T, ${joinArgs(generics)}>(${joinArgs(decoders)}, cons: (${joinArgs(callbacks)}) => T): Decoder<T>`
   )
 }
 
@@ -33,7 +35,17 @@ const tupleFormat = {
     decoders: letters.map(formatDecoderArg)
   }),
   formatString: ({generics, decoders}) => (
-    `export function tuple <${joinArgs(generics)}>(${joinArgs(decoders)}): IDecoder<[${joinArgs(generics)}]>`
+    `export function tuple <${joinArgs(generics)}>(${joinArgs(decoders)}): Decoder<[${joinArgs(generics)}]>`
+  )
+}
+
+const unionFormat = {
+  makeArgLists: (letters) => ({
+    generics: letters,
+    decoders: letters.map(formatDecoderArg)
+  }),
+  formatString: ({generics, decoders}) => (
+    `export function union <${joinArgs(generics)}>(${joinArgs(decoders)}): Decoder<${joinUnion(generics)}>`
   )
 }
 
@@ -55,5 +67,7 @@ function main () {
   console.log(makeSignatures(objectFormat, allLetters))
   console.log('======= TUPLE =======')
   console.log(makeSignatures(tupleFormat, allLetters))
+  console.log('======= TUPLE =======')
+  console.log(makeSignatures(unionFormat, allLetters))
 }
 main()

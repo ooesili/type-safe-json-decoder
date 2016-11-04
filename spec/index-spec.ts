@@ -463,3 +463,44 @@ describe('andThen', () => {
     })
   })
 })
+
+describe('union', () => {
+  describe('decoding a union string of string literals', () => {
+    type Easing = 'ease-in' | 'ease-out' | 'ease-in-out'
+    const decoder: module.Decoder<Easing> = module.union(
+      module.equal('ease-in' as 'ease-in'),
+      module.equal('ease-out' as 'ease-out'),
+      module.equal('ease-in-out' as 'ease-in-out')
+    )
+
+    it('can decode each alterantive', () => {
+      expect(decoder.decodeJSON(`"ease-in"`)).toEqual('ease-in')
+      expect(decoder.decodeJSON(`"ease-out"`)).toEqual('ease-out')
+      expect(decoder.decodeJSON(`"ease-in-out"`)).toEqual('ease-in-out')
+    })
+
+    it('fails to decode anything else', () => {
+      expect(() => decoder.decodeJSON(`"heck"`)).toThrowError(
+        `error at root: unexpected string`
+      )
+    })
+  })
+
+  describe('decoding a union of arbitrary types', () => {
+    const decoder: module.Decoder<number[] | boolean> = module.union(
+      module.array(module.number()),
+      module.boolean()
+    )
+
+    it('can decode each alternative', () => {
+      expect(decoder.decodeJSON(`[1, 2, 3]`)).toEqual([1, 2, 3])
+      expect(decoder.decodeJSON(`true`)).toEqual(true)
+    })
+
+    it('fails to decode anythign else', () => {
+      expect(() => decoder.decodeJSON(`{}`)).toThrowError(
+        `error at root: unexpected object`
+      )
+    })
+  })
+})
