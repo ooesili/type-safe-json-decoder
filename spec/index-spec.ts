@@ -504,3 +504,34 @@ describe('union', () => {
     })
   })
 })
+
+describe('Decoder.decodeAny', () => {
+  const decoder = module.object(
+    ['id', module.number()],
+    ['name', module.string()],
+    (id, name) => ({id, name})
+  )
+
+  it('can decode an normal object', () => {
+    const decoder = module.object(
+      ['id', module.number()],
+      ['name', module.string()],
+      (id, name) => ({id, name})
+    )
+    const input = {
+      id: 7,
+      name: 'Bob'
+    }
+    expect(decoder.decodeAny(input)).toEqual(input)
+  })
+
+  it('throws an error when the structure does not match the decoder', () => {
+    const input = {
+      id: '7',
+      name: 'Bob'
+    }
+    expect(() => decoder.decodeAny(input)).toThrowError(
+      `error at .id: expected number, got string`
+    )
+  })
+})
