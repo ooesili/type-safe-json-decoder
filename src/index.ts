@@ -39,7 +39,9 @@ export class Decoder<T> {
     this.fn = fn
   }
 
+  // tricky way to get a package-private constructor
   private static _ignore = (() => {
+    // compiler will complain about unused var without this
     Decoder._ignore
 
     decode = <T>(decoder: Decoder<T>, object: any, at: string): T => {
