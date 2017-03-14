@@ -469,3 +469,38 @@ export function union (...decoders: Decoder<any>[]): Decoder<any> {
     throw new Error(`error at ${at}: unexpected ${prettyPrint(obj)}`)
   })
 }
+
+/**
+ * Decode a value with the decoder returned by the given function. This is
+ * useful if you need to decode a recursive data structure. TypeScript does not
+ * allow the direct use of variables within their definition:
+ * ```typescript
+ * interface Comment {
+ *   msg: string
+ *   replies: Comment[]
+ * }
+ * const decoder: Decoder<Comment> = object(
+ *   ['msg', string()],
+ *   ['replies', array(decoder)],
+ *   (msg, replies) => ({msg, replies})
+ * )
+// Block-scoped variable 'decoder' used before its declaration.
+// Variable 'decoder' is used before being assigned.
+ * ```
+ * However, a variable can be used within its definition if it is not
+ * immediately evaluated, or in other words, wrapped in an anonymous function:
+ * ```typescript
+ * const decoder: Decoder<Comment> = object(
+ *   ['msg', string()],
+ *   ['replies', array(lazy(() => decoder))],
+ *   (msg, replies) => ({msg, replies})
+ * )
+ * ```
+ * @param thunk A function that will return the decoder.
+ * @returns A decoder that lazily calls thunk to get the decoder when needed.
+ */
+export function lazy <T>(thunk: () => Decoder<T>): Decoder<T> {
+  return createDecoder((obj, at) => {
+    return decode(thunk(), obj, at)
+  })
+}

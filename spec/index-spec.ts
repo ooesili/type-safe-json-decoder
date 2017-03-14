@@ -505,6 +505,53 @@ describe('union', () => {
   })
 })
 
+describe('lazy', () => {
+  describe('decoding a primitive data type', () => {
+    const decoder = module.lazy(() => module.string())
+
+    it('can decode type as normal', () => {
+      expect(decoder.decodeJSON(`"hello"`)).toEqual('hello')
+    })
+
+    it('does not alter the error message', () => {
+      expect(() => decoder.decodeJSON(`5`)).toThrowError(
+        `error at root: expected string, got number`
+      )
+    })
+  })
+
+  describe('decoding a recursive data structure', () => {
+    interface Comment {
+      msg: string
+      replies: Comment[]
+    }
+    const decoder: module.Decoder<Comment> = module.object(
+      ['msg', module.string()],
+      ['replies', module.array(
+        module.lazy(() => decoder)
+      )],
+      (msg, replies) => ({msg, replies})
+    )
+
+    it('can decode the data structure', () => {
+      const tree = `{"msg":"hey","replies":[{"msg":"hi","replies":[]}]}`
+      expect(decoder.decodeJSON(tree)).toEqual({
+        msg: 'hey',
+        replies: [
+          {msg: 'hi', replies: []}
+        ]
+      })
+    })
+
+    it('throws the correct error when a nested value is invalid', () => {
+      const badTree = `{"msg":"hey","replies":[{"msg":"hi","replies":[0]}]}`
+      expect(() => decoder.decodeJSON(badTree)).toThrowError(
+        `error at .replies[0].replies[0]: expected object, got number`
+      )
+    })
+  })
+})
+
 describe('Decoder.decodeAny', () => {
   const decoder = module.object(
     ['id', module.number()],
