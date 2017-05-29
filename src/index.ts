@@ -65,12 +65,11 @@ export class Decoder<T> {
   }
 
   /**
-   * Attempt to decode a plain object in into a value of type T. Unlike
-   * `decodeJSON` this method does not actually change the input, it simply
-   * verifies that its structure matches the Decoder. Throws a descriptive
-   * error if the object does not match the structure described by the decoder.
+   * Attempt to decode a plain object into a value of type T. Throws a
+   * descriptive error if the object does not match the structure described
+   * by the decoder.
    * @param object Any object.
-   * @returns The same object with added type information.
+   * @returns A value of the type described by the Decoder.
    */
   decodeAny (object: any): T {
     return this.fn(object, 'root')
