@@ -503,3 +503,30 @@ export function lazy <T>(thunk: () => Decoder<T>): Decoder<T> {
     return decode(thunk(), obj, at)
   })
 }
+
+/** Object with arbitrary keys and a single value type. Used by [dict](#dict).
+ */
+export type Dict<T> = {[index: string]: T}
+
+/**
+ * Decode an object with arbitrary keys. Values must be of the same type.
+ * @param value A Decoder that will be used to decode each value.
+ * @returns A Decoder will decode an object with arbitrary keys.
+ */
+export function dict <T>(value: Decoder<T>): Decoder<Dict<T>> {
+  return createDecoder((obj, at) => {
+    if (!(obj instanceof Object) || (obj instanceof Array)) {
+      throw decoderError({
+        at,
+        expected: 'object',
+        got: obj
+      })
+    }
+
+    const result: Dict<T> = {}
+    for (const key in obj) {
+      result[key] = decode(value, obj[key], pushLocation(at, key))
+    }
+    return result
+  })
+}

@@ -552,6 +552,50 @@ describe('lazy', () => {
   })
 })
 
+describe('dict', () => {
+  describe('with a simple value decoder', () => {
+    const decoder = module.dict(module.number())
+
+    it('can decode an empty object', () => {
+      expect(decoder.decodeJSON('{}')).toEqual({})
+    })
+
+    it('can decode an object of with arbitrary keys', () => {
+      expect(decoder.decodeJSON('{"a":1,"b":2}')).toEqual({a: 1, b: 2})
+    })
+
+    it('throws an error if a value cannot be decoded', () => {
+      expect(() => decoder.decodeJSON('{"oh":"no"}')).toThrowError(
+        `error at .oh: expected number, got string`
+      )
+    })
+
+    it('throws an error if given an array', () => {
+      expect(() => decoder.decodeJSON(`[]`)).toThrowError(
+        `error at root: expected object, got array`
+      )
+    })
+
+    it('throws an error if given a primitive', () => {
+      expect(() => decoder.decodeJSON(`5`)).toThrowError(
+        `error at root: expected object, got number`
+      )
+    })
+  })
+
+  describe('given a transformative value decoder', () => {
+    const decoder = module.dict(
+      module.map((str) => str + '!', module.string())
+    )
+
+    it('transforms the values', () => {
+      expect(decoder.decodeJSON(`{"hey":"there","yo":"dude"}`)).toEqual(
+        {hey: 'there!', yo: 'dude!'}
+      )
+    })
+  })
+})
+
 describe('Decoder.decodeAny', () => {
   const decoder = module.object(
     ['id', module.number()],
