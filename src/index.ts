@@ -255,11 +255,19 @@ export function object <T>(...args: any[]): Decoder<T> {
     }
 
     decoders.forEach(([key, decoder]) => {
-      if (key in obj) {
-        values.push(decode(decoder, obj[key], pushLocation(at, key)))
-      } else {
-        missingKeys.push(key)
+      let value
+
+      try {
+        value = decode(decoder, obj[key], pushLocation(at, key))
+      } catch (err) {
+        if (!(key in obj)) {
+          missingKeys.push(key)
+        } else {
+          throw err
+        }
       }
+
+      values.push(value)
     })
 
     if (missingKeys.length > 0) {

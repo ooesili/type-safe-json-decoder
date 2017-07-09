@@ -148,9 +148,22 @@ describe('object', () => {
       )
       expect(decoder.decodeJSON('{"x":3,"y":4}')).toEqual([3, 4])
     })
+
+    it('can decode an object with optional keys', () => {
+      interface User {
+        name?: string
+      }
+
+      const decoder: module.Decoder<User> = module.object(
+        ['name', module.oneOf(module.string(), module.succeed(undefined))],
+        (name) => ({name})
+      )
+
+      expect(decoder.decodeJSON(`{}`)).toEqual({name: undefined})
+    })
   })
 
-  describe('when incorrect JSON', () => {
+  describe('when given incorrect JSON', () => {
     it('fails when not given an object', () => {
       const decoder = module.object(
         ['x', module.number()],
@@ -175,7 +188,7 @@ describe('object', () => {
       const decoder = module.object(
         ['x', module.number()],
         ['y', module.number()],
-        ['?', module.succeed('????')],
+        ['?', module.string()],
         (x: number, y: number, huh: string) => ({x, y, huh})
       )
       expect(() => decoder.decodeJSON('{"x": 5}')).toThrowError(
